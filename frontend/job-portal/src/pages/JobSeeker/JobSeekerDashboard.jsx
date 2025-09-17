@@ -1,13 +1,13 @@
 import { useState, useEffect} from 'react';
 import { Search, Filter, Grid, List, X } from 'lucide-react';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import axiosInstance from '../../utils/axiosinstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import FilterContent from './components/FilterContent';
-import SeachHeader from './components/SeachHeader';
+import FilterContent from '../../components/jobSeeker/FilterContent';
+import SeachHeader from '../../components/jobSeeker/SeachHeader';
 import Navbar from '../../components/layout/Navbar';
 import JobCard from '../../components/Cards/JobCard';
 

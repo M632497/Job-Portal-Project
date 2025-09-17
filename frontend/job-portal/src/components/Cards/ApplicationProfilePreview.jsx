@@ -105,7 +105,8 @@ const ApplicationProfilePreview = ({
                 </div>
 
                 <button 
-                onClick={() => handleDownloadResume(selectedApplicant.applicant.resume)}
+                onClick={() => handleDownloadResume(selectedApplicant.applicant._id)}
+
                 className='w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors'
                 >
                     <Download className='h-4 w-4' />

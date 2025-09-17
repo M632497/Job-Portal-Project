@@ -1,9 +1,9 @@
 import React from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import Analytics from './components/Analytics';
-import Footer from './components/Footer';
+import Header from '../../components/landingPage/Header';
+import Hero from '../../components/landingPage/Hero';
+import Features from '../../components/landingPage/Features';
+import Analytics from '../../components/landingPage/Analytics';
+import Footer from '../../components/landingPage/Footer';
 
 const LandingPage = () => {
   return (

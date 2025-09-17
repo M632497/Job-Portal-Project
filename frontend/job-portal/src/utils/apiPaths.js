@@ -36,6 +36,7 @@ export const API_PATHS = {
     },
 
     IMAGE: {
-        UPLOAD_IMAGE: "/api/auth/upload-image", //upload profile picture
-    },
+  GET_SIGNATURE: "/api/auth/sign",  // ✅ actual backend endpoint
+},
+
 };

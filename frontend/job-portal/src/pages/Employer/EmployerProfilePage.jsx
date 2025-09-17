@@ -10,7 +10,21 @@ import EditProfileDetails from './EditProfileDetails';
 
 const EmployerProfilePage = () => {
 
-  const { user, updateUser } = useAuth();
+    const { user, updateUser } = useAuth();
+
+  const [profileData, setProfileData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    avatar: user?.avatar || "",
+    companyName: user?.companyName || "",
+    companyDescription: user?.companyDescription || "",
+    companyLogo: user?.companyLogo || "",
+  });
+
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({ ...profileData });
+  const [uploading, setUploading] = useState({ avatar: false, logo: false });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -25,110 +39,73 @@ const EmployerProfilePage = () => {
     }
   }, [user]);
 
-  const [profileData, setProfileData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    avatar: user?.avatar || "",
-    companyName: user?.companyName || "",
-    companyDescription: user?.companyDescription || "",
-    companyLogo: user?.companyLogo || "",
-  });
-
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({...profileData});
-  const [uploading, setUploading] = useState({ avatar: false, logo: false });
-  const [saving, setSaving] = useState(false);
-
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = async (file, type) => {
-    setUploading((prev) => ({ ...prev, [type]: true}));
+  const handleImageChange = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    try {
-      const imgUploadRes = await uploadImage(file);
-      const avatarUrl = imgUploadRes.imageUrl || "";
+    const previewUrl = URL.createObjectURL(file);
 
-      const field = type === "avatar" ? "avatar" : "companyLogo";
-      handleInputChange(field, avatarUrl);
-    } catch (error) {
-      console.error("image upload failed: ", error);
-    } finally {
-      setUploading((prev) => ({ ...prev, [type]: false}));
+    if (type === "avatar") {
+      setFormData((prev) => ({ ...prev, avatar: previewUrl, avatarFile: file }));
+    } else if (type === "logo") {
+      setFormData((prev) => ({ ...prev, companyLogo: previewUrl, companyLogoFile: file }));
     }
   };
-
-const handleImageChange = (e, type) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const previewUrl = URL.createObjectURL(file);
-
-  if (type === "avatar") {
-    setFormData(prev => ({ ...prev, avatar: previewUrl, avatarFile: file }));
-  } else if (type === "logo") {
-    setFormData(prev => ({ ...prev, companyLogo: previewUrl, companyLogoFile: file }));
-  }
-};
-
 
   const handleSave = async () => {
-  setSaving(true);
+    setSaving(true);
+    try {
+      let avatarUrl = formData.avatar;
+      let companyLogoUrl = formData.companyLogo;
 
-  try {
-    const form = new FormData();
-    
-    form.append("name", formData.name);
-    form.append("companyName", formData.companyName);
-    form.append("companyDescription", formData.companyDescription);
+      if (formData.avatarFile) {
+        avatarUrl = await uploadImage(formData.avatarFile);
+      }
+      if (formData.companyLogoFile) {
+        companyLogoUrl = await uploadImage(formData.companyLogoFile);
+      }
 
-    // Only append if the user selected a new file
-    if (formData.avatarFile) form.append("avatar", formData.avatarFile);
-    if (formData.companyLogoFile) form.append("companyLogo", formData.companyLogoFile);
-
-    const response = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, form, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    if (response.status === 200) {
-      toast.success("Profile details updated successfully!");
-      setProfileData({
-        ...profileData,
-        ...response.data,
+      const response = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, {
+        name: formData.name,
+        companyName: formData.companyName,
+        companyDescription: formData.companyDescription,
+        avatarUrl,
+        companyLogoUrl,
       });
-      updateUser(response.data);
-      setEditMode(false);
-    }
-  } catch (error) {
-    console.error("Profile update failed:", error);
-    toast.error("Profile update failed. Check console for details.");
-  } finally {
-    setSaving(false);
-  }
-};
 
+      if (response.status === 200) {
+        toast.success("Profile updated!");
+        setProfileData({ ...profileData, ...response.data });
+        updateUser(response.data);
+        setEditMode(false);
+      }
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      toast.error("Profile update failed.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleCancel = () => {
-    setFormData({...profileData});
+    setFormData({ ...profileData });
     setEditMode(false);
   };
 
   if (editMode) {
     return (
       <EditProfileDetails
-      formData={formData}
-      handleImageChange={handleImageChange}
-      handleInputChange={handleInputChange}
-      handleSave={handleSave}
-      handleCancel={handleCancel}
-      saving={saving}
-      uploading={uploading}
+        formData={formData}
+        handleImageChange={handleImageChange}
+        handleInputChange={handleInputChange}
+        handleSave={handleSave}
+        handleCancel={handleCancel}
+        saving={saving}
+        uploading={uploading}
       />
     );
   }

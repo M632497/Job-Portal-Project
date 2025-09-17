@@ -9,6 +9,8 @@ import moment from 'moment';
 import { getInitials } from '../../utils/helper';
 import StatusBadge from '../../components/StatusBadge';
 import ApplicationProfilePreview from '../../components/Cards/ApplicationProfilePreview';
+import toast from 'react-hot-toast';
+
 
 const ApplicationViewer = () => {
 
@@ -53,9 +55,20 @@ const ApplicationViewer = () => {
     }, {});
   }, [applications]);
 
-  const handleDownloadResume = (resumeUrl) => {
-    window.open(resumeUrl, "_blank");
-  };
+  const handleDownloadResume = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/api/user/${userId}/resume`);
+    if (response.data.resumeUrl) {
+      window.open(response.data.resumeUrl, "_blank");
+    } else {
+      toast.error("Resume not found.");
+    }
+  } catch (err) {
+    console.error("Error fetching signed resume:", err);
+    toast.error("Could not fetch resume");
+  }
+};
+
 
   return (
     <DashboardLayout activeMenu='manage-jobs'>
@@ -167,7 +180,8 @@ const ApplicationViewer = () => {
                             <div className='flex items-center gap-3 mt-4 md:m-0'>
                               <StatusBadge status={application.status} />
                               <button
-                              onClick={() => handleDownloadResume(application.applicant.resume)}
+                              onClick={() => handleDownloadResume(application.applicant._id)}
+
                               className='inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors'>
                                 <Download className='h-4 w-4' />
                                 Resume

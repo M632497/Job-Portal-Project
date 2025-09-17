@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { Save, X, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../utils/axiosinstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import toast from "react-hot-toast";
 import uploadImage from "../../utils/uploadImage";
 import Navbar from "../../components/layout/Navbar";
 import { Link } from "react-router-dom";
-import { BASE_URL } from "../../utils/apiPaths";
+import uploadResume from "../../utils/uploadResume";
 
 const UserProfile = () => {
   const { user, updateUser } = useAuth();
@@ -37,73 +37,66 @@ const UserProfile = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // ✅ Avatar upload to Cloudinary
   const handleAvatarChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  // Show instant preview
-  const previewUrl = URL.createObjectURL(file);
-  setFormData((prev) => ({ ...prev, avatar: previewUrl }));
-  setUploading({ avatar: true });
-
-  try {
-    const res = await uploadImage(file);
-
-    const url = res.imageUrl || "";
-
-    if (url) {
-      setFormData((prev) => ({ ...prev, avatar: url }));
-      updateUser({ ...formData, avatar: url }); // keep AuthContext in sync
-      toast.success("Avatar updated!");
-    } else {
-      toast.error("Upload failed: No URL received");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Avatar upload failed");
-  } finally {
-    setUploading({ avatar: false });
-  }
-};
-
-
-  const handleResumeChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const form = new FormData();
-    form.append("resume", file);
-    setSaving(true);
-    try {
-      const res = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (res.status === 200) {
-        toast.success("Resume uploaded successfully!");
-       const newResumeUrl = res.data.resume;
-setFormData((prev) => ({ ...prev, resume: newResumeUrl }));
-updateUser({ ...user, resume: newResumeUrl }); // use current user, not old formData
 
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, avatar: previewUrl }));
+    setUploading({ avatar: true });
+
+    try {
+      const url = await uploadImage(file);
+      if (url) {
+        setFormData((prev) => ({ ...prev, avatar: url }));
+        updateUser({ ...user, avatar: url });
+        await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, { avatarUrl: url });
+        toast.success("Avatar updated!");
+      } else {
+        toast.error("Upload failed: No URL received");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to upload resume");
+      toast.error("Avatar upload failed");
     } finally {
-      setSaving(false);
+      setUploading({ avatar: false });
     }
   };
 
+  // ✅ Resume upload to Cloudinary
+const handleResumeChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setSaving(true);
+  try {
+    const url = await uploadResume(file); // <-- use new function
+console.log("Resume URL being sent to backend:", url);
+
+    if (url) {
+      setFormData((prev) => ({ ...prev, resume: url }));
+      updateUser({ ...user, resume: url });
+      await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, { resumeUrl: url });
+      toast.success("Resume uploaded successfully!");
+
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to upload resume");
+  } finally {
+    setSaving(false);
+  }
+};
+  // ✅ Delete resume (fixed axios.delete)
   const handleDeleteResume = async () => {
     if (!formData.resume) return;
     setSaving(true);
     try {
-      const res = await axiosInstance.delete(API_PATHS.AUTH.DELETE_RESUME, {
-        resumeUrl: formData.resume,
-      });
-      if (res.status === 200) {
-        toast.success("Resume deleted successfully!");
-        setFormData((prev) => ({ ...prev, resume: "" }));
-        updateUser({ ...formData, resume: "" });
-      }
+      await axiosInstance.delete(API_PATHS.AUTH.DELETE_RESUME);
+      setFormData((prev) => ({ ...prev, resume: "" }));
+      updateUser({ ...user, resume: "" });
+      toast.success("Resume deleted successfully!");
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete resume");
@@ -112,38 +105,23 @@ updateUser({ ...user, resume: newResumeUrl }); // use current user, not old form
     }
   };
 
+  // ✅ Save (only updates name/company info, no files here)
   const handleSave = async () => {
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append("name", formData.name || "");
-    formDataToSend.append("companyName", formData.companyName || "");
-    formDataToSend.append("companyDescription", formData.companyDescription || "");
-
-    if (formData.avatar instanceof File) {
-      formDataToSend.append("avatar", formData.avatar);
+    setSaving(true);
+    try {
+      const payload = {
+        name: formData.name,
+      };
+      const res = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, payload);
+      updateUser(res.data);
+      toast.success("Profile updated successfully");
+    } catch (err) {
+      console.error("Update failed:", err);
+      toast.error("Failed to update profile");
+    } finally {
+      setSaving(false);
     }
-    if (formData.resume instanceof File) {
-      formDataToSend.append("resume", formData.resume);
-    }
-    if (formData.companyLogo instanceof File) {
-      formDataToSend.append("companyLogo", formData.companyLogo);
-    }
-
-    const res = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, formDataToSend, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    toast.success("Profile updated successfully");
-    console.log("Profile updated:", res.data);
-
-    if (res.data) {
-      updateUser(res.data);  
-    }
-  } catch (err) {
-    console.error("Update failed:", err);
-    toast.error("Failed to update profile");
-  }
-};
+  };
 
   const handleCancel = () => {
     if (user) {
@@ -175,9 +153,9 @@ updateUser({ ...user, resume: newResumeUrl }); // use current user, not old form
             <div className="flex items-center space-x-6">
               <img
                 src={formData.avatar?.startsWith("http") 
-      ? formData.avatar 
-      : `${BASE_URL}/${formData.avatar}`}
-    alt="avatar"
+                  ? formData.avatar 
+                  : `${BASE_URL}/${formData.avatar}`}
+                alt="avatar"
                 className="w-24 h-24 rounded-full object-cover border border-gray-300"
               />
               <div>
