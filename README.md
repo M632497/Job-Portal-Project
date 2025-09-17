@@ -29,7 +29,6 @@ job-portal/
 │ ├── controllers/
 │ ├── models/
 │ ├── routes/
-│ ├── uploads/
 │ └── server.js
 │
 │── frontend/job-portal/ # React frontend
@@ -81,4 +80,5 @@ npm start
 
 Author
 Maria Riaz Khan
+
 
