@@ -336,6 +336,14 @@ login({ _id, name, email, avatar, role, companyName, companyDescription, company
               </p>
             )}
           </div>
+
+           {/* Login link */}
+          <div className='text-center' >
+            <p className='text-gray-600'>
+              Already have an account? {' '}
+              <a href="/login" className='text-blue-600 hover:text-blue-700 font-medium'>Login here</a>
+            </p>
+          </div>
         </form>
       </motion.div>
     </div>

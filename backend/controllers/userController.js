@@ -1,15 +1,26 @@
 import User from "../models/User.js";
 import cloudinary from "../config/cloudinary.js";
 
-// Update profile
 export const updateProfile = async (req, res) => {
   try {
-    const { name, companyName, companyDescription, avatarUrl, resumeUrl, companyLogoUrl } = req.body;
-    const user = req.user; // loaded from protect middleware
+    const {
+      name,
+      companyName,
+      companyDescription,
+      avatarUrl,
+      resumeUrl,
+      companyLogoUrl,
+    } = req.body;
+
+    const user = req.user;
 
     if (name) user.name = name;
     if (avatarUrl) user.avatar = avatarUrl;
-    if (resumeUrl) user.resume = resumeUrl;
+
+    if (resumeUrl) {
+      user.resume = resumeUrl;
+    }
+
     if (companyLogoUrl && user.role === "employer") {
       user.companyLogo = companyLogoUrl;
     }
@@ -36,43 +47,31 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+
 export const getResumeUrl = async (req, res) => {
   try {
-    console.log("⛳ Resume route hit");
+    console.log(" Resume route hit");
     console.log("Requested ID:", req.params.id);
 
     const user = await User.findById(req.params.id);
     if (!user) {
-      console.log("❌ User not found");
+      console.log(" User not found");
       return res.status(404).json({ message: "User not found" });
     }
 
     if (!user.resume) {
-      console.log("❌ Resume URL missing for user:", user._id);
+      console.log(" Resume URL missing for user:", user._id);
       return res.status(404).json({ message: "Resume not found" });
     }
 
-    console.log("✅ Resume found:", user.resume);
+    console.log(" Resume found:", user.resume);
 
-    const resumeUrl = user.resume;
-    const parts = resumeUrl.split("/");
-    const fileNameWithExtension = parts.pop();
-    const publicId = `resumes/${fileNameWithExtension.replace(/\.[^/.]+$/, "")}`;
-
-    const signedUrl = cloudinary.v2.url(publicId, {
-      resource_type: "raw",
-      type: "authenticated",
-      sign_url: true,
-      secure: true,
-    });
-
-    res.json({ resumeUrl: signedUrl });
+    res.json({ resumeUrl: user.resume });
   } catch (err) {
-    console.error("🔥 Error generating resume URL:", err);
-    res.status(500).json({ message: "Failed to generate resume URL" });
+    console.error(" Error fetching resume URL:", err);
+    res.status(500).json({ message: "Failed to fetch resume URL" });
   }
 };
-
 
 // Delete resume (just clear Cloudinary URL)
 export const deleteResume = async (req, res) => {

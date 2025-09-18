@@ -36,7 +36,7 @@ export const API_PATHS = {
     },
 
     IMAGE: {
-  GET_SIGNATURE: "/api/auth/sign",  // ✅ actual backend endpoint
+  GET_SIGNATURE: "/api/auth/sign",  //  actual backend endpoint
 },
 
 };

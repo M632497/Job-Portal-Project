@@ -1,7 +1,7 @@
 import { API_PATHS } from "./apiPaths";
 import axiosInstance from "./axiosinstance";
 
-// ✅ Get signature from backend
+// Get signature from backend
 const getSignature = async (folder) => {
   const res = await axiosInstance.get(
     `${API_PATHS.IMAGE.GET_SIGNATURE}?folder=${folder}`
@@ -9,7 +9,7 @@ const getSignature = async (folder) => {
   return res.data;
 };
 
-// ✅ Upload resume (PDF/DOC) to Cloudinary (signed)
+//  Upload resume (PDF/DOC) to Cloudinary (signed)
 const uploadResume = async (file, folder = "resumes") => {
   if (!file) return null;
 
@@ -22,7 +22,7 @@ const uploadResume = async (file, folder = "resumes") => {
   formData.append("signature", signature);
   formData.append("folder", folder);
 
-  // 👇 use "raw/upload" for non-images
+  // use "raw/upload" for non-images
   const cloudinaryRes = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
     {
@@ -34,7 +34,7 @@ const uploadResume = async (file, folder = "resumes") => {
   const data = await cloudinaryRes.json();
 
   if (data.secure_url) {
-    return data.secure_url; // ✅ working PDF/DOC link
+    return data.secure_url; 
   } else {
     throw new Error("Resume upload failed: " + JSON.stringify(data));
   }
